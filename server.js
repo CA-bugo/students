@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 const pool = mysql.createPool({
   host: "sql.freedb.tech",
   user: "u_zuhk0L",
-  password: "pyvPrDfXssnI   ",
+  password: "pyvPrDfXssnI",
   database: "freedb_SHBMM6UG",
   connectionLimit: 5,
   waitForConnections: true,
@@ -59,38 +59,45 @@ app.get("/api/students", (req, res) => {
 
 // create new student
 app.post("/api/students", (req, res) => {
-    const fname = req.body.fname;
-    const course = req.body.course;
-    const sid = req.body.sid;
-    const email = req.body.email;
-    const ylevel = req.body.ylevel;
-    const cNumber = req.body.cNumber;
+  const body = req.body || {};
+  const fname = body.fname ?? body.full_name ?? body.name ?? "";
+  const course = body.course ?? "";
+  const sid = body.sid ?? body.student_id ?? body.id ?? "";
+  const email = body.email ?? "";
+  const ylevel = body.ylevel ?? body.year_level ?? "";
+  const cNumber = body.cNumber ?? body.contact_number ?? body.contactNumber ?? "";
 
-    pool.query(
-      "INSERT INTO student (fname, course, sid, email, ylevel, cNumber) VALUES (?, ?, ?, ?, ?, ?)",
-      [fname, course, sid, email, ylevel, cNumber],
-      (err, results) => {
-        if (err) {
-          console.error("Database query error: " + err.message);
-            res.status(500).json({ error: "Database query error" });
-            return;
-        }
-        res.status(201).json({ msg: "Successfully added" });
+  if (!fname || !course || !sid || !email || !ylevel || !cNumber) {
+    return res.status(400).json({ error: "Missing required student fields" });
+  }
+
+  pool.query(
+    "INSERT INTO student (fname, course, sid, email, ylevel, cNumber) VALUES (?, ?, ?, ?, ?, ?)",
+    [fname, course, sid, email, ylevel, cNumber],
+    (err, results) => {
+      if (err) {
+        console.error("Database query error: " + err.message);
+        return res.status(500).json({ error: "Database query error" });
       }
-    );
+      res.status(201).json({ msg: "Successfully added" });
+    }
+  );
+});
 
-})
-
-// update student 
+// update student
 app.put("/api/students", (req, res) => {
-    const fname = req.body.fname;
-    const course = req.body.course;
-    const sid = req.body.sid;
-    const email = req.body.email;
-    const ylevel = req.body.ylevel;
-    const cNumber = req.body.cNumber;
-    const originalSid = req.body.originalSid || sid;
+  const body = req.body || {};
+  const fname = body.fname ?? body.full_name ?? body.name ?? "";
+  const course = body.course ?? "";
+  const sid = body.sid ?? body.student_id ?? body.id ?? "";
+  const email = body.email ?? "";
+  const ylevel = body.ylevel ?? body.year_level ?? "";
+  const cNumber = body.cNumber ?? body.contact_number ?? body.contactNumber ?? "";
+  const originalSid = body.originalSid ?? body.original_student_id ?? sid;
 
+  if (!fname || !course || !sid || !email || !ylevel || !cNumber) {
+    return res.status(400).json({ error: "Missing required student fields" });
+  }
 
   pool.query(
     "UPDATE student SET fname = ?, course = ?, sid = ?, email = ?, ylevel = ?, cNumber = ? WHERE sid = ?",
@@ -98,25 +105,26 @@ app.put("/api/students", (req, res) => {
     (err, result) => {
       if (err) {
         console.error("Update error: " + err.message);
-        res.status(500).json({ error: err.message });
-        return;
+        return res.status(500).json({ error: err.message });
       }
-      res.json({ msg: `Successfully updated` });
+      res.json({ msg: "Successfully updated" });
     }
   );
 });
 
-
 //delete student
 app.delete("/api/students", (req, res) => {
-  const sid = req.body.sid;
+  const sid = req.body.sid ?? req.body.student_id ?? req.body.id;
+  if (!sid) {
+    return res.status(400).json({ error: "Missing student id" });
+  }
+
   pool.query("DELETE FROM student WHERE sid = ?", [sid], (err, rows, fields) => {
     if (err) {
       console.error("Delete error: " + err.message);
-      res.status(500).json({ error: err.message });
-      return;
+      return res.status(500).json({ error: err.message });
     }
-    res.json({ msg: `Successfully deleted` });
+    res.json({ msg: "Successfully deleted" });
   });
 });
     
